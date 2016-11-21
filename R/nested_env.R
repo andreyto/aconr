@@ -1,43 +1,40 @@
-# Turns nested environments into nested lists
-# A nested environment is a tree of environments where the tree
+# Turns nested environments into nested lists A nested environment is a tree of environments where the tree
 # relationship is defined by a parent.env() results.
 as_list_nested_env <- function(x) {
-  done_env_hash = new.env()
+    done_env_hash = new.env()
 
-  as_list_nested_env_inner <- function(x) {
-    stopifnot(is.environment(x) || is.list(x))
-    y = list()
-    x_names = names(x) #for list elements w/o names, returns ""
-    for(i_el in seq_along(x_names)) {
-      if(is.environment(x)) val = x[[x_names[[i_el]]]]
-      else val = x[[i_el]]
-      if(is.environment(val)) {
-        val_key = data.table::address(val)
-        if( is.null(done_env_hash[[val_key]]) ) {
-          done_env_hash[[val_key]] = T
-          val = as_list_nested_env_inner(val)
+    as_list_nested_env_inner <- function(x) {
+        stopifnot(is.environment(x) || is.list(x))
+        y = list()
+        x_names = names(x)  #for list elements w/o names, returns ''
+        for (i_el in seq_along(x_names)) {
+            if (is.environment(x))
+                val = x[[x_names[[i_el]]]] else val = x[[i_el]]
+            if (is.environment(val)) {
+                val_key = data.table::address(val)
+                if (is.null(done_env_hash[[val_key]])) {
+                  done_env_hash[[val_key]] = T
+                  val = as_list_nested_env_inner(val)
+                }
+            } else if (is.list(val)) {
+                val = as_list_nested_env_inner(val)
+            }
+            y[[i_el]] = val
         }
-      }
-      else if(is.list(val)) {
-        val = as_list_nested_env_inner(val)
-      }
-      y[[i_el]] = val
+        names(y) = names(x)
+        return(y)
     }
-    names(y) = names(x)
-    return (y)
-  }
-  return (as_list_nested_env_inner(x))
+    return(as_list_nested_env_inner(x))
 }
 
 # apply ls.str() to a nested environment structure
 ls_str_nested_env <- function(x) {
-  ls.str(as_list_nested_env(x))
+    ls.str(as_list_nested_env(x))
 }
 
-# print nested environment structure for debugging purposes
-# by applying ls.str()
-print_nested_env <- function(x,max.level=100,...) {
-  print(ls_str_nested_env(x),max.level=max.level,...)
+# print nested environment structure for debugging purposes by applying ls.str()
+print_nested_env <- function(x, max.level = 100, ...) {
+    print(ls_str_nested_env(x), max.level = max.level, ...)
 }
 
 
@@ -71,50 +68,42 @@ print_nested_env <- function(x,max.level=100,...) {
 #' is created.
 #'
 #' @return Newly created environment
-copy_env <- function(x,deep=F,
-                     parent=parent.env(x),
-                     func.update.parent=T,
-                     deep.update.parent=T,
-                     into.env=NULL,
-                     ...) {
-  ## as.list copies active binding as functions; this allows us
-  ## recreating them as active bindings in the new environment
-  y = list2env(as.list.environment(x, all.names=TRUE),
-               parent = parent,envir=into_envir,...)
-  for (name in names(y)) {
-    if(deep) {
+copy_env <- function(x, deep = F, parent = parent.env(x), func.update.parent = T, deep.update.parent = T, into.env = NULL,
+    ...) {
+    ## as.list copies active binding as functions; this allows us recreating them as active bindings in the new
+    ## environment
+    y = list2env(as.list.environment(x, all.names = TRUE), parent = parent, envir = into.env, ...)
+    for (name in names(y)) {
+        if (deep) {
 
-      if(is.environment(y[[name]])) {
-        y_sub = y[[name]]
-        y_sub_par = parent.env(y_sub)
-        if(deep.update.parent && identical(y_sub_par,x)) {
-          y_sub_par = y
+            if (is.environment(y[[name]])) {
+                y_sub = y[[name]]
+                y_sub_par = parent.env(y_sub)
+                if (deep.update.parent && identical(y_sub_par, x)) {
+                  y_sub_par = y
+                }
+                y[[name]] = copy_env(y_sub, deep = deep, parent = y_sub_par, func.update.parent = func.update.parent,
+                  deep.update.parent = deep.update.parent, ...)
+            }
         }
-        y[[name]] = copy_env(y_sub,deep = deep,parent = y_sub_par,
-                             func.update.parent = func.update.parent,
-                             deep.update.parent = deep.update.parent,
-                             ...)
-      }
+        ## both plain functions and active bindings become functions in y
+        if (is.function(y[[name]])) {
+            y_sub = y[[name]]
+            y_sub_par = environment(y_sub)
+            ## update function environment if the original one points to the enclosing object
+            if (func.update.parent && identical(y_sub_par, x)) {
+                y_sub_par = y
+                environment(y_sub) <- y_sub_par
+            }
+            ## additionally, if the original value was active binding, create active binding for the copied value
+            if (bindingIsActive(name, x)) {
+                rm(list = name, envir = y)
+                makeActiveBinding(name, y_sub, y)
+            } else {
+                y[[name]] = y_sub
+            }
+        }
     }
-    ## both plain functions and active bindings become functions in y
-    if(is.function(y[[name]])) {
-      y_sub = y[[name]]
-      y_sub_par = environment(y_sub)
-      ## update function environment if the original one points to the enclosing object
-      if(func.update.parent && identical(y_sub_par,x)) {
-        y_sub_par = y
-        environment(y_sub) <- y_sub_par
-      }
-      ## additionally, if the original value was active binding, create active binding for the
-      ## copied value
-      if(bindingIsActive(name,x)) {
-        rm(list = name, envir = y)
-        makeActiveBinding(name,y_sub,y)
-      }
-      else {
-        y[[name]] = y_sub
-      }
-    }
-  }
-  return (y)
+    return(y)
 }
+

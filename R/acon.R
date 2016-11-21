@@ -50,7 +50,7 @@
 #' consuming the resulting config data structure are to be written as expecting a hierarchy of standard
 #' named lists. You should use \code{acon} calls to create the original active config and/or a modified
 #' version of the active config,
-#' and then "freeze" the final result with a call to \code{as.list} that has the S3 class method
+#' and then 'freeze' the final result with a call to \code{as.list} that has the S3 class method
 #' \code{\link{as.list.acon}}. This method creates a hirarchical named list with the same structure
 #' as a given active config, and with the values computed from the active config. Pass this list
 #' to your consumer function.
@@ -70,7 +70,7 @@
 #' @examples
 #' z = acon(v=4,w=acon(x=v*2))
 #' x = acon(s=1:4,
-#'          f=function(x) sprintf("x is %s",x),
+#'          f=function(x) sprintf('Argument is %s',x),
 #'          t=acon(x=s*2,
 #'                 z=acon(k=x*4)
 #'          ),
@@ -79,89 +79,73 @@
 #' print(x$t$z$k)
 #' y = acon(x,
 #'          s=1:16,
-#'          f=function(x) sprintf("y is %s",x),
 #'          t=acon(l=10))
 #' print(y$f(y$t$z$k))
-acon <- function(.with=NULL,
-                 .update=T,
-                 .under=parent.frame(),...) {
-  ## How this is designed:
-  ## The general idea is to overload the `=` assignment operator.
-  ## Since it is impossible in R, we instead emulate it by
-  ## designing a special processing of the `=` when it is used
-  ## to specify values for named arguments in a function call.
-  ## this acon() constructor performs NSE of its argument list and
-  ## returns a new environment object (S3 subclassed as `acon`).
-  ## Any value expression that is itself a call to acon() is generated with a recursive call
-  ## to acon(), but with the .under argument updated to point to the currently built
-  ## environment (current acon object).
-  ## Any other value expression is first evaluated anc checked if it is of type acon. If yes,
-  ## the evaluated value is copied and placed under the current acon. If no, the name of
-  ## the argument is made an active binding bound to a function that is constructed from the
-  ## value expression.
-  ## Thus, the returned result is a nested set of environments (acon objects), wit leaf values
-  ## all being active bindings. When any of the active binding attributes is accessed, the
-  ## corresponding expression will be evaluated, with names in the expression automatically being
-  ## looked up the chain of nested environments until found.
-  this_call = match.call()
-  if(is.null(.with)) {
-    env = new.env(parent=.under)
-  }
-  else {
-    ## always make a deep copy of the .with environment, thus providing a "copy
-    ## constructor" semantics
-    env = copy_env(.with,deep = T,parent = .under)
-  }
-  class(env) <- append(class(env),"acon",0)
-  #   print("DEBUG START")
-  #   print(paste0(".parent= ",as.list(.under)," address_parent=",data.table::address(.under),
-  #                " this_call=",paste(this_call,collapse = ",")," address_env=",data.table::address(env),
-  #                " sys.calls=",paste(sys.calls(),collapse = "->")))
-  #   print("DEBUG END")
-
-  for(i in 2:length(this_call)) {
-    var_name = names(this_call)[[i]]
-    if(substring(var_name,1,1)!=".") {
-      var_name_exists = exists(var_name, envir = env, inherits = FALSE)
-      var_rhs = this_call[[i]]
-      if(is.language(var_rhs) && (!is.symbol(var_rhs)) && var_rhs[[1]]=="acon") {
-        ## Missing .update arg means T (the default, but default is not set in
-        ## the unevaluated expression yet)
-        update_ev = (is.null(var_rhs$.update) || eval(var_rhs$.update,env))
-        ## if rhs is acon ctor expression, and the lhs already exists in the
-        ## current object (inherited from .with), then the lhs is assumed to be
-        ## the environment and is used as the .with argument to call the rhs ev ctor.
-        if(!var_name_exists) {
-          update_ev = F
-        }
-        if(update_ev) {
-          var_rhs[[".with"]] = eval(parse(text=var_name),env)
-        }
-        var_rhs[[".under"]] = env
-        ## simply evaluate the acon ctor call and assign
-        val = eval(var_rhs,envir = env)
-        rm_if_exists(var_name,env)
-        env[[var_name]] = val
-      }
-      else {
-        ## we have to eval in order to check the class of the resulting value
-        val = eval(var_rhs,env)
-        ## if rhs is acon object, it is copied and attached to the current object
-        if(inherits(val,"acon")) {
-          val = copy_env(val,deep = T,parent = env)
-          rm_if_exists(var_name,env)
-          env[[var_name]] = val
-        }
-        ## if not acon object or acon ctor expression, assign as active binding
-        else {
-          func_rhs = make_function(alist(), var_rhs, env) #.x =
-          rm_if_exists(var_name,env)
-          makeActiveBinding(var_name, func_rhs, env)
-        }
-      }
+acon <- function(.with = NULL, .update = T, .under = parent.frame(), ...) {
+    ## How this is designed: The general idea is to overload the `=` assignment operator.  Since it is
+    ## impossible in R, we instead emulate it by designing a special processing of the `=` when it is used to
+    ## specify values for named arguments in a function call.  this acon() constructor performs NSE of its
+    ## argument list and returns a new environment object (S3 subclassed as `acon`).  Any value expression that
+    ## is itself a call to acon() is generated with a recursive call to acon(), but with the .under argument
+    ## updated to point to the currently built environment (current acon object).  Any other value expression is
+    ## first evaluated anc checked if it is of type acon. If yes, the evaluated value is copied and placed under
+    ## the current acon. If no, the name of the argument is made an active binding bound to a function that is
+    ## constructed from the value expression.  Thus, the returned result is a nested set of environments (acon
+    ## objects), wit leaf values all being active bindings. When any of the active binding attributes is
+    ## accessed, the corresponding expression will be evaluated, with names in the expression automatically
+    ## being looked up the chain of nested environments until found.
+    this_call = match.call()
+    if (is.null(.with)) {
+        env = new.env(parent = .under)
+    } else {
+        ## always make a deep copy of the .with environment, thus providing a 'copy constructor' semantics
+        env = copy_env(.with, deep = T, parent = .under)
     }
-  }
-  env
+    class(env) <- append(class(env), "acon", 0)
+    # print('DEBUG START') print(paste0('.parent= ',as.list(.under),'
+    # address_parent=',data.table::address(.under), ' this_call=',paste(this_call,collapse = ','),'
+    # address_env=',data.table::address(env), ' sys.calls=',paste(sys.calls(),collapse = '->'))) print('DEBUG
+    # END')
+
+    for (i in 2:length(this_call)) {
+        var_name = names(this_call)[[i]]
+        if (substring(var_name, 1, 1) != ".") {
+            var_name_exists = exists(var_name, envir = env, inherits = FALSE)
+            var_rhs = this_call[[i]]
+            if (is.language(var_rhs) && (!is.symbol(var_rhs)) && var_rhs[[1]] == "acon") {
+                ## Missing .update arg means T (the default, but default is not set in the unevaluated expression yet)
+                update_ev = (is.null(var_rhs$.update) || eval(var_rhs$.update, env))
+                ## if rhs is acon ctor expression, and the lhs already exists in the current object (inherited from .with),
+                ## then the lhs is assumed to be the environment and is used as the .with argument to call the rhs ev ctor.
+                if (!var_name_exists) {
+                  update_ev = F
+                }
+                if (update_ev) {
+                  var_rhs[[".with"]] = eval(parse(text = var_name), env)
+                }
+                var_rhs[[".under"]] = env
+                ## simply evaluate the acon ctor call and assign
+                val = eval(var_rhs, envir = env)
+                rm_if_exists(var_name, env)
+                env[[var_name]] = val
+            } else {
+                ## we have to eval in order to check the class of the resulting value
+                val = eval(var_rhs, env)
+                ## if rhs is acon object, it is copied and attached to the current object
+                if (inherits(val, "acon")) {
+                  val = copy_env(val, deep = T, parent = env)
+                  rm_if_exists(var_name, env)
+                  env[[var_name]] = val
+                } else {
+                  ## if not acon object or acon ctor expression, assign as active binding
+                  func_rhs = make_function(alist(), var_rhs, env)  #.x =
+                  rm_if_exists(var_name, env)
+                  makeActiveBinding(var_name, func_rhs, env)
+                }
+            }
+        }
+    }
+    env
 }
 
 #' Create a hierarchical named list with the same structure
@@ -183,7 +167,7 @@ acon <- function(.with=NULL,
 #' z_list
 #' z_list$w$x == 8
 as.list.acon <- function(x) {
-  as_list_nested_env(x)
+    as_list_nested_env(x)
 }
 
 #' Print \code{\link{acon}} object
@@ -194,7 +178,7 @@ as.list.acon <- function(x) {
 #'
 #' @export
 #'
-print.acon <- function(x,max.level=100,...) {
-  print_nested_env(x,max.level=max.level,...)
+print.acon <- function(x, max.level = 100, ...) {
+    print_nested_env(x, max.level = max.level, ...)
 }
 

@@ -1,12 +1,18 @@
 Package: aconr
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Active Config Data Structure
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: Andrey Tovchigrechko
+Authors@R: as.person("Andrey Tovchigrechko <andreyto@gmail.com>[aut, cre]")
+Description: The acon class represents a hierachical datastructure
+    containing key-value pairs at each level of the hierarchy, with
+    each value defined as R expressions that can reference keys from both the current
+    and upper levels, with the expression recomputed at each access to the key using
+    current values of other keys.
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 5.0.1
+Imports:
+    data.table
+Suggests: testthat

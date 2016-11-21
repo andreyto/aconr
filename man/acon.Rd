@@ -25,8 +25,8 @@ return value (similar to a list constructor).}
 \description{
 The \code{acon} class represents a hierachical datastructure
 containing key-value pairs at each level of the hierarchy, with
-each value defined as R expressions that can reference keys from the upper
-levels, with the expression recomputed at each access to the key using
+each value defined as R expressions that can reference keys from both the current
+and upper levels, with the expression recomputed at each access to the key using
 current values of other keys.
 }
 \details{
@@ -58,12 +58,12 @@ by modifying the value of \code{c} key instead of creating new \code{acon} insta
 the resulting \code{acon} object assigned to \code{b} still contained unchanged copy of the \code{d}
 key, in addition to a modified copy of \code{c}.
 
-The above example leads to the major intended use case for the \code{acon} class: a software
+The above example leads to the \strong{major intended use case} for the \code{acon} class: a software
 pipeline can define
 the default instance of a (possibly large and deeply nested) config, where values deeper in the
 config hierarchy are defined as expressions computed from the values of the keys located higher up in the
 hierarchy. The user, applying the pattern from the example above, can derive another instance of
-the entire config by selectively modifying values at arbitrary values of the hierarchy with
+the entire config by selectively modifying values at arbitrary levels of the hierarchy with
 a minimal amount of code that only dereferences the keys to be modified. The config is then passed to
 the pipeline that uses it to obtain the parameters. Other values which depend on the modified
 values will be appropriately recomputed.
@@ -74,7 +74,7 @@ the existing \code{acon} object. For performance and portability reasons, we rec
 consuming the resulting config data structure are to be written as expecting a hierarchy of standard
 named lists. You should use \code{acon} calls to create the original active config and/or a modified
 version of the active config,
-and then "freeze" the final result with a call to \code{as.list} that has the S3 class method
+and then 'freeze' the final result with a call to \code{as.list} that has the S3 class method
 \code{\link{as.list.acon}}. This method creates a hirarchical named list with the same structure
 as a given active config, and with the values computed from the active config. Pass this list
 to your consumer function.
@@ -82,7 +82,7 @@ to your consumer function.
 \examples{
 z = acon(v=4,w=acon(x=v*2))
 x = acon(s=1:4,
-         f=function(x) sprintf("x is \%s",x),
+         f=function(x) sprintf('Argument is \%s',x),
          t=acon(x=s*2,
                 z=acon(k=x*4)
          ),
@@ -91,7 +91,6 @@ x = acon(s=1:4,
 print(x$t$z$k)
 y = acon(x,
          s=1:16,
-         f=function(x) sprintf("y is \%s",x),
          t=acon(l=10))
 print(y$f(y$t$z$k))
 }
