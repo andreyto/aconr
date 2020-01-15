@@ -29,7 +29,7 @@ as_list_nested_env <- function(x) {
 
 # apply ls.str() to a nested environment structure
 ls_str_nested_env <- function(x) {
-    ls.str(as_list_nested_env(x))
+    utils::ls.str(as_list_nested_env(x))
 }
 
 # print nested environment structure for debugging purposes by applying ls.str()

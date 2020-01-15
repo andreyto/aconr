@@ -1,12 +1,12 @@
-#' Create an instance of an \emph{Active Config} \code{acon} class.
+#' Create an instance of an Active Config \code{acon} class.
 #'
-#' The \code{acon} class represents a hierachical datastructure
+#' The \code{acon} class implements a hierachical datastructure
 #' containing key-value pairs at each level of the hierarchy, with
 #' each value defined as R expressions that can reference keys from both the current
 #' and upper levels, with the expression recomputed at each access to the key using
 #' current values of other keys.
 #'
-#' The returned object is similar to a nested named list data structure
+#' The object returned by the constructor is similar to a nested named list data structure
 #' that can be used, for example, to describe configuration parameters
 #' for a software. Such nested list configuration structures are often
 #' represented by JSON files containing a single top-level JSON object
@@ -54,6 +54,9 @@
 #' \code{\link{as.list.acon}}. This method creates a hirarchical named list with the same structure
 #' as a given active config, and with the values computed from the active config. Pass this list
 #' to your consumer function.
+#'
+#' @section Warning:
+#' Because these configs are evaluated as R code, they should never be accepted from untrusted sources.
 #'
 #' @param .with Existing \code{acon} object. Start constructing new object from a deep copy of this
 #' object. If missing, start from an empty new object.
@@ -149,7 +152,7 @@ acon <- function(.with = NULL, .update = T, .under = parent.frame(), ...) {
 }
 
 #' Create a hierarchical named list with the same structure
-#' as the provided \emph{Active Config} \code{\link{acon}} object,
+#' as the provided Active Config \code{\link{acon}} object,
 #' and with the values computed from the active config.
 #'
 #' \strong{Note}: Active bindings are evaluated and replaced with the returned
@@ -157,7 +160,8 @@ acon <- function(.with = NULL, .update = T, .under = parent.frame(), ...) {
 #' even when their environment is the \code{acon} object that is being converted here.
 #'
 #' @param x \code{\link{acon}} object
-#'
+#' @param ... other parameters are ignored; they are here to maintain signature
+#' of the \code{\link[base]{as.list}} generic
 #' @export
 #'
 #' @examples
@@ -166,7 +170,7 @@ acon <- function(.with = NULL, .update = T, .under = parent.frame(), ...) {
 #' z_list = as.list(z_acon)
 #' z_list
 #' z_list$w$x == 8
-as.list.acon <- function(x) {
+as.list.acon <- function(x,...) {
     as_list_nested_env(x)
 }
 

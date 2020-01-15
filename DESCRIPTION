@@ -1,10 +1,10 @@
 Package: aconr
 Type: Package
 Title: Active Config Data Structure
-Version: 0.1.0
+Version: 1.0.0
 Author: Andrey Tovchigrechko
 Authors@R: as.person("Andrey Tovchigrechko <andreyto@gmail.com>[aut, cre]")
-Description: The acon class represents a hierachical datastructure
+Description: The acon class provided by this package implements a hierachical datastructure
     containing key-value pairs at each level of the hierarchy, with
     each value defined as R expressions that can reference keys from both the current
     and upper levels, with the expression recomputed at each access to the key using
@@ -12,7 +12,7 @@ Description: The acon class represents a hierachical datastructure
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 5.0.1
+RoxygenNote: 7.0.2
 Imports:
     data.table
 Suggests: testthat

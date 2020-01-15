@@ -16,4 +16,3 @@
 \description{
 Print \code{\link{acon}} object
 }
-

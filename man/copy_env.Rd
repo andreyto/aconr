@@ -4,8 +4,15 @@
 \alias{copy_env}
 \title{Create a copy of a nested environment structure}
 \usage{
-copy_env(x, deep = F, parent = parent.env(x), func.update.parent = T,
-  deep.update.parent = T, into.env = NULL, ...)
+copy_env(
+  x,
+  deep = F,
+  parent = parent.env(x),
+  func.update.parent = T,
+  deep.update.parent = T,
+  into.env = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{Top environment in a nested environment structure}
@@ -46,4 +53,3 @@ functions assigned to names in the environment, including active
 bindings are also reset, but only if the original function's
 environment is the same as the environment that holds the name.
 }
-

@@ -3,13 +3,16 @@
 \name{as.list.acon}
 \alias{as.list.acon}
 \title{Create a hierarchical named list with the same structure
-as the provided \emph{Active Config} \code{\link{acon}} object,
+as the provided Active Config \code{\link{acon}} object,
 and with the values computed from the active config.}
 \usage{
-\method{as.list}{acon}(x)
+\method{as.list}{acon}(x, ...)
 }
 \arguments{
 \item{x}{\code{\link{acon}} object}
+
+\item{...}{other parameters are ignored; they are here to maintain signature
+of the \code{\link[base]{as.list}} generic}
 }
 \description{
 \strong{Note}: Active bindings are evaluated and replaced with the returned
@@ -23,4 +26,3 @@ z_list = as.list(z_acon)
 z_list
 z_list$w$x == 8
 }
-

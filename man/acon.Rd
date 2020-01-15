@@ -2,7 +2,7 @@
 % Please edit documentation in R/acon.R
 \name{acon}
 \alias{acon}
-\title{Create an instance of an \emph{Active Config} \code{acon} class.}
+\title{Create an instance of an Active Config \code{acon} class.}
 \usage{
 acon(.with = NULL, .update = T, .under = parent.frame(), ...)
 }
@@ -23,14 +23,14 @@ return value (similar to a list constructor).}
 \code{acon} object
 }
 \description{
-The \code{acon} class represents a hierachical datastructure
+The \code{acon} class implements a hierachical datastructure
 containing key-value pairs at each level of the hierarchy, with
 each value defined as R expressions that can reference keys from both the current
 and upper levels, with the expression recomputed at each access to the key using
 current values of other keys.
 }
 \details{
-The returned object is similar to a nested named list data structure
+The object returned by the constructor is similar to a nested named list data structure
 that can be used, for example, to describe configuration parameters
 for a software. Such nested list configuration structures are often
 represented by JSON files containing a single top-level JSON object
@@ -79,6 +79,11 @@ and then 'freeze' the final result with a call to \code{as.list} that has the S3
 as a given active config, and with the values computed from the active config. Pass this list
 to your consumer function.
 }
+\section{Warning}{
+
+Because these configs are evaluated as R code, they should never be accepted from untrusted sources.
+}
+
 \examples{
 z = acon(v=4,w=acon(x=v*2))
 x = acon(s=1:4,
@@ -94,4 +99,3 @@ y = acon(x,
          t=acon(l=10))
 print(y$f(y$t$z$k))
 }
-
