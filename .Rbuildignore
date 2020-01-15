@@ -1,3 +1,11 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 \.force_dir_into_git$
+^tests_run$
+^tests/testthat/tests_run_.*$
+.DS_Store
+.Rhistory
+README.md
+Dockerfile
+COPYING
+LICENSE.GPLv3.html
