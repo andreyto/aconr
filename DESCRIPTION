@@ -6,7 +6,7 @@ Author: Andrey Tovchigrechko
 Authors@R: as.person("Andrey Tovchigrechko <andreyto@gmail.com>[aut, cre]")
 Description: The acon class provided by this package implements a hierachical datastructure
     containing key-value pairs at each level of the hierarchy, with
-    each value defined as R expressions that can reference keys from both the current
+    each value defined as the R expression that can reference keys from both the current
     and upper levels, with the expression recomputed at each access to the key using
     current values of other keys.
 License: GPL-3
@@ -15,4 +15,7 @@ LazyData: true
 RoxygenNote: 7.0.2
 Imports:
     data.table
-Suggests: testthat
+Suggests: testthat,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

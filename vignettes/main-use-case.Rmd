@@ -1,0 +1,144 @@
+---
+title: "Main use case of aconr"
+author: "Andrey Tovchigrechko"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Main use case of aconr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+The main intended use case for the `aconr` package is the creation of nested configuration structures for the
+analysis pipelines. `aconr` stands for Active Config in R.
+
+This vignette assumes that you have read the documentation on `acon` class constructor, which is the main entry point of the
+`aconr` package. You can access it with `?aconr::acon` from the R session once you install the package.
+
+With the `acon` class constructor, a software pipeline can define
+the default instance of a possibly large and deeply nested config, where values deeper in the
+config hierarchy are defined as expressions computed from the values of the keys located higher up in the
+hierarchy. To tune the config to their needs, the user can derive another instance of
+the entire config by selectively modifying values at arbitrary levels of the hierarchy with
+a minimal amount of code that only dereferences the keys to be modified. The config is then passed to
+the pipeline that uses it to obtain the parameters. Other values in the config which depend on the modified
+values will be appropriately recomputed.
+
+Below, we will show how the default config is constructed, and how it is modified by the user for the specific analysis run.
+But first, we will create the "analysis pipeline" that consumes the config.
+
+## The "analysis pipeline"
+
+```{r}
+bar <- function(param_x,param_z,param_l=NULL) {
+  print("Using parameters in functions 'bar':") 
+  print(list(param_x=param_x,param_z=param_z,param_l=param_l))
+}
+
+foo <- function(param_s,param_f,param_t,param_p) {
+  print("Using parameters in functions 'foo':")
+  print(list(param_s=param_s,param_p=param_p))
+  do.call(bar,param_t)
+}
+```
+
+## Define the default config
+
+With `acon`, a config looks like a nested named list or a hierarchy of objects in JSON.
+The `acon` constructor replaces the use of `list` constructor, thus providing the resulting
+datastructure with the special abilities.
+
+In this imaginary example, we assum that all named elements are parameters that will be
+used by functions in the analysis workflow that we will define after we build the config.
+
+This is subcomponent (subtree) of the config. Notice that `param_x` is defined as an expression
+based on the value of `param_v`, which is defined higher up in the enclosing branch of this config
+snippet.
+
+```{r}
+library(aconr)
+param_z <- acon(param_v=4,param_w=acon(param_x=param_v*2))
+```
+
+The word Active in the full name of this datastructure means that wherever `param_x` is accessed, the 
+expression will be recomputed by finding the current value of the `param_v` and multiplying it by 2: 
+`r param_z$param_w$param_x`. This is similar to
+the behavior of the `recursively expanded variables` in the [Make](https://www.gnu.org/software/make/manual/html_node/Flavors.html) 
+program. The lookup of the parameters referenced in the expression happens just like the variable lookup
+in R through a chain of enclosing environments. In fact, the `acon` is implemented as a subclass of the R `environment`.
+
+Define the entire config datastructure, reusing the existing `param_z` as a node of the configuration tree in one place, 
+and defining new unrelated parameter with the same name `param_z` in another place.
+
+```{r}
+config_default <- acon(param_s=1:2,
+                 param_f=function(x) sprintf('Argument is %s',paste(x,collapse = ",")),
+                 param_t=acon(param_x=param_s*2,
+                        param_z=acon(param_k=param_x*4)
+                 ),
+                 param_p = param_z
+)
+```
+
+Above, we added `param_f` that has a function as its value that can be used, for example, as a call-back by the analysis code.
+
+The values of the config elements can be read (but not changed) using the usual list element notation:
+
+```{r}
+config_default$param_t$param_z$param_k
+```
+
+## Define the config with the user modifications
+
+Now, the user wants to modify some values in the config before passing the config to the analysis workflow.
+The modification has to be done by constructing new `acon` top-level object and passing the original config
+object as the **first unnamed** parameter. Other arguments in that call should be names of those config elements
+that the user wants to update with new values. If the old value was itself the `acon` object, the new
+value can be a call to the `acon` constructor with the named arguments for **only those elements** which the
+user wants to change or, in our example, create (see `param_t=acon(param_l=10)` below that creates `param_l`). 
+Such an update can be 
+called by referencing the parameters down in a chain of `acon` constructor calls to any depth in the configuration tree.
+
+```{r}
+config_user <- acon(config_default,
+              param_s=1:3,
+              param_t=acon(param_l=10))
+```
+
+Notice how the `param_k` value changed because we changed the
+`param_s` on which the `param_k` indirectly depends.
+
+```{r}
+config_user$param_t$param_z$param_k
+```
+
+`config_user` is always created as a deep copy of the `config_default`, which stays the same:
+
+```{r}
+config_default$param_t$param_z$param_k
+```
+
+You can only modify the elements of the config through the constructor pattern above.
+An attempt to assign directly to the element like `config_user$param_s <- 1:4` will trigger an error.
+
+You can use the updated `acon` config datastructure directly in your analysis code. However,
+typically your downstream analysis code does not need the ability to update the parameters through the "active" 
+mechanism. In that case, we recommend converting the updated config to a regular nested named list before using
+it. That removes the dependency of your analysis code on the `acon` object and improves performance when accessing
+the confif elements in your code.
+
+```{r}
+config_user = as.list(config_user)
+```
+
+## Call our analysis with the modified config
+
+```{r}
+do.call(foo,config_user)
+```
